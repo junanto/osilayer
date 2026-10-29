@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OSI Explorer: Petualangan 7 Lapisan OSI</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Touch Polyfill for Mobile Drag and Drop -->
+    <script src="https://cdn.jsdelivr.net/npm/drag-drop-touch@1.3.0/DragDropTouch.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+        }
+        .draggable-card {
+            touch-action: none;
+            cursor: grab;
+            user-select: none;
+        }
+        .draggable-card:active {
+            cursor: grabbing;
+        }
+        .drop-zone {
+            transition: all 0.2s ease-in-out;
+        }
+        .drop-zone.drag-over {
+            background-color: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+            transform: scale(1.02);
+        }
+        /* Mobile Selection Style */
+        .card-selected {
+            ring: 4px;
+            ring-color: #3b82f6;
+            border-color: #60a5fa !important;
+            background-color: #1e293b !important;
+            transform: scale(1.03);
+        }
+        .slot-selected {
+            border-color: #eab308 !important;
+            background-color: rgba(234, 179, 8, 0.15) !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-slate-900">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-4 py-3">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
+                    <i class="fa-solid fa-network-wired text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                        OSI Explorer
+                    </h1>
+                    <p class="text-xs text-slate-400">Petualangan 7 Lapisan Jaringan</p>
+                </div>
+            </div>
+
+            <!-- Header Action Buttons -->
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleMnemonicModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition flex items-center gap-2 border border-slate-700">
+                    <i class="fa-solid fa-lightbulb text-amber-400"></i>
+                    <span class="hidden sm:inline">Tips Mnemonic</span>
+                </button>
+                <button onclick="showLeaderboardScreen()" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-xs font-semibold text-white transition flex items-center gap-2 shadow-md shadow-cyan-600/30">
+                    <i class="fa-solid fa-trophy text-amber-300"></i>
+                    <span>Leaderboard</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-5xl w-full mx-auto p-4 flex-grow flex flex-col justify-center">
+
+        <!-- Student Info Header (During Gameplay) -->
+        <div id="student-bar" class="hidden mb-4 p-3 bg-slate-900/90 rounded-2xl border border-slate-800 flex flex-wrap justify-between items-center gap-2">
+            <div class="flex items-center space-x-3 text-sm">
+                <span class="px-3 py-1 bg-cyan-950 text-cyan-400 rounded-lg border border-cyan-800/50 font-medium">
+                    <i class="fa-solid fa-user-graduate mr-1"></i> <span id="bar-student-name">-</span>
+                </span>
+                <span class="px-3 py-1 bg-slate-800 text-slate-300 rounded-lg border border-slate-700 font-medium">
+                    <i class="fa-solid fa-users text-slate-400 mr-1"></i> <span id="bar-student-class">-</span>
+                </span>
+            </div>
+            <div class="flex items-center space-x-4 text-xs font-semibold">
+                <span class="text-slate-400">Skor: <span id="bar-score" class="text-cyan-400 text-sm">0</span></span>
+                <span class="text-slate-400">Waktu: <span id="bar-timer" class="text-amber-400 text-sm">00:00</span></span>
+            </div>
+        </div>
+
+        <!-- 1. START SCREEN -->
+        <section id="screen-start" class="text-center py-6">
+            <div class="max-w-md mx-auto bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+                <div class="absolute -top-12 -right-12 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl"></div>
+                <div class="w-16 h-16 bg-cyan-500/10 text-cyan-400 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 border border-cyan-500/20">
+                    <i class="fa-solid fa-gamepad"></i>
+                </div>
+                <h2 class="text-2xl font-extrabold text-white mb-2">Selamat Datang, Explorer!</h2>
+                <p class="text-slate-400 text-xs sm:text-sm mb-6 leading-relaxed">
+                    Kuasai 7 Lapisan OSI (*Open Systems Interconnection*) melalui tantangan susun lapisan, cocokkan protokol, dan kuis skenario jaringan!
+                </p>
+
+                <!-- Student Identity Form -->
+                <div class="space-y-4 text-left mb-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Nama Lengkap Siswa <span class="text-rose-500">*</span></label>
+                        <input type="text" id="input-student-name" placeholder="Contoh: Budi Santoso" class="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-cyan-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Kelas / Jurusan <span class="text-rose-500">*</span></label>
+                        <input type="text" id="input-student-class" placeholder="Contoh: X TKJ 1" class="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-cyan-500 transition">
+                    </div>
+                </div>
+
+                <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/25 transition transform active:scale-95 flex items-center justify-center space-x-2">
+                    <span>Mulai Petualangan</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- 2. GAME LEVEL SCREEN -->
+        <section id="screen-game" class="hidden">
+            <!-- Level Indicator Bar -->
+            <div class="mb-4 bg-slate-900/60 p-3 rounded-2xl border border-slate-800 flex justify-between items-center text-xs">
+                <span id="level-badge" class="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full font-bold border border-cyan-500/30">
+                    LEVEL 1: Urutan OSI
+                </span>
+                <span class="text-slate-400 hidden sm:inline"><i class="fa-solid fa-hand-pointer text-cyan-400"></i> Tap kartu lalu tap slot untuk memindahkan</span>
+            </div>
+
+            <!-- Dynamic Level Container -->
+            <div id="level-container">
+                <!-- Content will be injected dynamically -->
+            </div>
+        </section>
+
+        <!-- 3. RESULT SCREEN -->
+        <section id="screen-result" class="hidden text-center py-6">
+            <div class="max-w-lg mx-auto bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl relative">
+                <div class="w-20 h-20 bg-amber-500/10 text-amber-400 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-4 border border-amber-500/20">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <h2 class="text-3xl font-extrabold text-white mb-1">Misi Selesai!</h2>
+                <p class="text-slate-400 text-xs sm:text-sm mb-6">Kamu telah berhasil menembus 7 Lapisan OSI!</p>
+
+                <!-- Final Score Card -->
+                <div class="bg-slate-950 p-6 rounded-2xl border border-slate-800 mb-6 grid grid-cols-2 gap-4">
+                    <div class="text-center border-r border-slate-800">
+                        <span class="text-xs text-slate-400 block mb-1">Total Skor</span>
+                        <span id="final-score" class="text-3xl font-black text-cyan-400">0</span>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-xs text-slate-400 block mb-1">Total Waktu</span>
+                        <span id="final-time" class="text-3xl font-black text-amber-400">00:00</span>
+                    </div>
+                </div>
+
+                <!-- Google Sheets Submission Status -->
+                <div id="sheets-status-box" class="mb-6 p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <i id="sheets-status-icon" class="fa-solid fa-spinner fa-spin text-cyan-400 text-base"></i>
+                        <span id="sheets-status-text">Mengirim hasil ke Google Sheet Leaderboard...</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="startGame()" class="py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl transition text-xs sm:text-sm">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> Main Lagi
+                    </button>
+                    <button onclick="showLeaderboardScreen()" class="py-3.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl transition text-xs sm:text-sm shadow-md shadow-cyan-600/30">
+                        <i class="fa-solid fa-list-ol mr-1"></i> Leaderboard
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. LEADERBOARD SCREEN -->
+        <section id="screen-leaderboard" class="hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-trophy text-amber-400"></i> Leaderboard Top Explorer
+                        </h2>
+                        <p class="text-xs text-slate-400">Peringkat skor tertinggi terhubung dengan Google Sheets</p>
+                    </div>
+                    <button onclick="showStartScreen()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg text-slate-300">
+                        <i class="fa-solid fa-xmark mr-1"></i> Tutup
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                                <th class="p-3">Rank</th>
+                                <th class="p-3">Nama Siswa</th>
+                                <th class="p-3">Kelas</th>
+                                <th class="p-3 text-right">Skor</th>
+                                <th class="p-3 text-right">Waktu</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body" class="divide-y divide-slate-800/50 text-sm">
+                            <tr>
+                                <td colspan="5" class="p-6 text-center text-slate-500">
+                                    <i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat data peringkat...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Byte Assistant Bar (Floating Bottom) -->
+    <aside class="sticky bottom-0 z-30 bg-slate-900/95 border-t border-slate-800 px-4 py-3 backdrop-blur">
+        <div class="max-w-5xl mx-auto flex items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-full bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-base shrink-0">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-bold text-cyan-400 block">Byte Assistant</span>
+                    <p id="byte-dialogue" class="text-xs text-slate-300 line-clamp-1">Halo! Isikan nama & kelasmu lalu klik "Mulai Petualangan"!</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Modal Mnemonic Tips -->
+    <div id="modal-mnemonic" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl relative">
+            <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-lightbulb text-amber-400"></i> Tips Menghafal 7 Lapisan OSI
+            </h3>
+            <p class="text-xs text-slate-400 mb-4">Gunakan jembatan keledai (*mnemonic*) berikut dari Layer 7 ke Layer 1:</p>
+            
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-sm font-semibold space-y-2 mb-6">
+                <p class="text-cyan-400"><span class="text-amber-400 font-extrabold">A</span>ll <span class="text-slate-500 text-xs">(Application)</span></p>
+                <p class="text-cyan-400"><span class="text-amber-400 font-extrabold">P</span>eople <span class="text-slate-500 text-xs">(Presentation)</span></p>
+                <p class="text-cyan-400"><span class="text-amber-400 font-extrabold">S</span>eem <span class="text-slate-500 text-xs">(Session)</span></p>
+                <p class="text-cyan-400"><span class="text-amber-400 font-extrabold">T</span>o <span class="text-slate-500 text-xs">(Transport)</span></p>
+                <p class="text-cyan-400"><span class="text-amber-400 font-extrabold">N</span>eed <span class="text-slate-500 text-xs">(Network)</span></p>
+                <p class="text-cyan-400"><span class="text-amber-400 font-extrabold">D</span>ata <span class="text-slate-500 text-xs">(Data Link)</span></p>
+                <p class="text-cyan-400"><span class="text-amber-400 font-extrabold">P</span>rocessing <span class="text-slate-500 text-xs">(Physical)</span></p>
+            </div>
+
+            <button onclick="toggleMnemonicModal()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition">
+                Tutup
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Game Logic -->
+    <script>
+        // ==========================================
+        // CONFIGURATION & GLOBAL STATE
+        // ==========================================
+        
+        // 📌 URL Web App Google Apps Script ditaruh di sini
+        let appsScriptUrl = "https://script.google.com/macros/s/AKfycbze-PW0wm0_1Wod7T5H0z4wcYGjdwsU9NcGaqH1fELxFahei3NdiJgXkT94OJhTGGrkBg/exec";
+
+        let studentName = "";
+        let studentClass = "";
+        let currentLevel = 1;
+        let score = 0;
+        let timerInterval = null;
+        let secondsElapsed = 0;
+
+        // Mobile Tap-Selection State
+        let selectedL1CardNum = null;
+        let selectedL2ItemId = null;
+
+        // Level 1 Data (7 OSI Layers)
+        const OSI_LAYERS = [
+            { num: 7, name: "Application", color: "from-purple-500 to-indigo-600" },
+            { num: 6, name: "Presentation", color: "from-blue-500 to-indigo-600" },
+            { num: 5, name: "Session", color: "from-cyan-500 to-blue-600" },
+            { num: 4, name: "Transport", color: "from-emerald-500 to-teal-600" },
+            { num: 3, name: "Network", color: "from-amber-500 to-orange-600" },
+            { num: 2, name: "Data Link", color: "from-orange-500 to-red-600" },
+            { num: 1, name: "Physical", color: "from-rose-500 to-pink-600" }
+        ];
+
+        let level1BoardState = { 7: null, 6: null, 5: null, 4: null, 3: null, 2: null, 1: null };
+
+        // Level 2 Data (Protocols & Hardware)
+        const LEVEL2_ITEMS = [
+            { id: "p1", name: "HTTP / HTTPS", type: "Protokol Web", targetLayer: 7 },
+            { id: "p2", name: "SSL / TLS", type: "Enkripsi Data", targetLayer: 6 },
+            { id: "p3", name: "NetBIOS", type: "Koneksi Sesi", targetLayer: 5 },
+            { id: "p4", name: "TCP / UDP", type: "Port & Segment", targetLayer: 4 },
+            { id: "p5", name: "IP Address / Router", type: "Routing Paket", targetLayer: 3 },
+            { id: "p6", name: "MAC Address / Switch", type: "Framing Hardware", targetLayer: 2 },
+            { id: "p7", name: "Kabel UTP / Bit 0-1", type: "Transmisi Sinyal", targetLayer: 1 }
+        ];
+
+        let level2BoardState = { 7: null, 6: null, 5: null, 4: null, 3: null, 2: null, 1: null };
+
+        // Level 3 Questions
+        const LEVEL3_QUESTIONS = [
+            {
+                question: "Siswa A mengirim pesan rahasia. Pada lapisan mana data diubah formatnya dan dienkripsi agar aman?",
+                options: ["Layer 7 - Application", "Layer 6 - Presentation", "Layer 3 - Network", "Layer 1 - Physical"],
+                correct: 1,
+                hint: "Pikirkan tentang translasi dan enkripsi SSL/TLS!"
+            },
+            {
+                question: "Router bekerja pada lapisan mana untuk menentukan jalur rute IP pengiriman data antar kota?",
+                options: ["Layer 2 - Data Link", "Layer 3 - Network", "Layer 4 - Transport", "Layer 5 - Session"],
+                correct: 1,
+                hint: "Router menggunakan IP Address yang berada di Network Layer!"
+            },
+            {
+                question: "Gamer membutuhkan koneksi game online super cepat tanpa delay meskipun tanpa konfirmasi error. Protokol UDP apa yang digunakan dan di layer mana?",
+                options: ["Layer 7 - Application", "Layer 4 - Transport", "Layer 2 - Data Link", "Layer 5 - Session"],
+                correct: 1,
+                hint: "TCP dan UDP mengelola segmen di Transport Layer!"
+            }
+        ];
+        let currentL3Index = 0;
+
+        // ==========================================
+        // INITIALIZATION & SCREEN NAVIGATION
+        // ==========================================
+
+        function showScreen(screenId) {
+            ['screen-start', 'screen-game', 'screen-result', 'screen-leaderboard'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        function startGame() {
+            const nameInput = document.getElementById('input-student-name').value.trim();
+            const classInput = document.getElementById('input-student-class').value.trim();
+
+            if (!nameInput || !classInput) {
+                updateByteDialogue("Harap isi Nama Lengkap dan Kelasmu terlebih dahulu!");
+                return;
+            }
+
+            studentName = nameInput;
+            studentClass = classInput;
+
+            document.getElementById('bar-student-name').innerText = studentName;
+            document.getElementById('bar-student-class').innerText = studentClass;
+            document.getElementById('student-bar').classList.remove('hidden');
+
+            score = 0;
+            currentLevel = 1;
+            secondsElapsed = 0;
+            updateScoreUI();
+            startTimer();
+
+            showScreen('screen-game');
+            loadLevel1();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+                const secs = String(secondsElapsed % 60).padStart(2, '0');
+                document.getElementById('bar-timer').innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function updateScoreUI() {
+            document.getElementById('bar-score').innerText = score;
+        }
+
+        function updateByteDialogue(text) {
+            document.getElementById('byte-dialogue').innerText = text;
+        }
+
+        function toggleMnemonicModal() {
+            document.getElementById('modal-mnemonic').classList.toggle('hidden');
+        }
+
+        // ==========================================
+        // LEVEL 1: URUTAN OSI (DRAG & TAP)
+        // ==========================================
+
+        function loadLevel1() {
+            document.getElementById('level-badge').innerText = "LEVEL 1: Urutan 7 Lapisan OSI";
+            updateByteDialogue("Pindahkan kartu lapisan ke posisi nomor yang benar (7 ke 1)!");
+
+            selectedL1CardNum = null;
+            level1BoardState = { 7: null, 6: null, 5: null, 4: null, 3: null, 2: null, 1: null };
+
+            const shuffledCards = [...OSI_LAYERS].sort(() => Math.random() - 0.5);
+
+            const container = document.getElementById('level-container');
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Kartu Lapisan OSI</h3>
+                        <div id="l1-cards-pool" class="space-y-2">
+                            ${shuffledCards.map(layer => `
+                                <div id="l1-card-${layer.num}" 
+                                     onclick="handleL1CardTap(${layer.num})"
+                                     draggable="true" 
+                                     ondragstart="handleL1DragStart(event, ${layer.num})"
+                                     class="draggable-card p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-sm font-semibold transition hover:border-slate-700">
+                                    <span class="text-slate-200">${layer.name}</span>
+                                    <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400">Layer ?</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Slot Lapisan (7 -> 1)</h3>
+                        <div id="l1-slots" class="space-y-2">
+                            ${[7,6,5,4,3,2,1].map(num => `
+                                <div id="l1-slot-${num}" 
+                                     onclick="handleL1SlotTap(${num})"
+                                     ondragover="event.preventDefault()" 
+                                     ondrop="handleL1Drop(event, ${num})"
+                                     class="drop-zone p-3 rounded-xl border-2 border-dashed border-slate-800 bg-slate-950/50 flex items-center justify-between text-sm min-h-[50px]">
+                                    <span class="text-xs font-bold text-slate-500">Layer ${num}</span>
+                                    <span class="text-xs text-slate-600 font-normal">Ketuk kartu lalu ketuk slot ini</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="checkLevel1()" class="w-full mt-6 py-3.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl shadow-lg transition">
+                    Verifikasi Jawaban Level 1
+                </button>
+            `;
+        }
+
+        function handleL1CardTap(layerNum) {
+            selectedL1CardNum = layerNum;
+            document.querySelectorAll('#l1-cards-pool .draggable-card').forEach(el => el.classList.remove('card-selected'));
+            const cardEl = document.getElementById(`l1-card-${layerNum}`);
+            if (cardEl) cardEl.classList.add('card-selected');
+            updateByteDialogue(`Kartu "${OSI_LAYERS.find(l => l.num === layerNum).name}" dipilih. Sekarang ketuk slot Layer tujuannya!`);
+        }
+
+        function handleL1SlotTap(slotNum) {
+            if (!selectedL1CardNum) return;
+            placeL1CardInSlot(selectedL1CardNum, slotNum);
+            selectedL1CardNum = null;
+            document.querySelectorAll('#l1-cards-pool .draggable-card').forEach(el => el.classList.remove('card-selected'));
+        }
+
+        function handleL1DragStart(e, layerNum) {
+            e.dataTransfer.setData('text/plain', layerNum);
+        }
+
+        function handleL1Drop(e, slotNum) {
+            e.preventDefault();
+            const layerNum = parseInt(e.dataTransfer.getData('text/plain'));
+            if (layerNum) placeL1CardInSlot(layerNum, slotNum);
+        }
+
+        function placeL1CardInSlot(layerNum, slotNum) {
+            const layerObj = OSI_LAYERS.find(l => l.num === layerNum);
+            level1BoardState[slotNum] = layerNum;
+
+            const slotEl = document.getElementById(`l1-slot-${slotNum}`);
+            slotEl.className = `p-3 rounded-xl bg-gradient-to-r ${layerObj.color} text-white font-semibold flex items-center justify-between text-sm border border-white/10`;
+            slotEl.innerHTML = `
+                <span>Layer ${slotNum}: ${layerObj.name}</span>
+                <button onclick="event.stopPropagation(); removeL1Slot(${slotNum}, ${layerNum})" class="text-xs bg-black/20 px-2 py-1 rounded hover:bg-black/40">Batal</button>
+            `;
+
+            const cardEl = document.getElementById(`l1-card-${layerNum}`);
+            if (cardEl) cardEl.classList.add('hidden');
+        }
+
+        function removeL1Slot(slotNum, layerNum) {
+            level1BoardState[slotNum] = null;
+            const slotEl = document.getElementById(`l1-slot-${slotNum}`);
+            slotEl.className = `drop-zone p-3 rounded-xl border-2 border-dashed border-slate-800 bg-slate-950/50 flex items-center justify-between text-sm min-h-[50px]`;
+            slotEl.innerHTML = `
+                <span class="text-xs font-bold text-slate-500">Layer ${slotNum}</span>
+                <span class="text-xs text-slate-600">Ketuk kartu lalu ketuk slot ini</span>
+            `;
+
+            const cardEl = document.getElementById(`l1-card-${layerNum}`);
+            if (cardEl) cardEl.classList.remove('hidden');
+        }
+
+        function checkLevel1() {
+            let correctCount = 0;
+            for (let num = 1; num <= 7; num++) {
+                if (level1BoardState[num] === num) correctCount++;
+            }
+
+            if (correctCount === 7) {
+                score += 350;
+                updateScoreUI();
+                updateByteDialogue("Luar biasa! Seluruh 7 lapisan OSI berada di urutan yang tepat (+350 poin)!");
+                setTimeout(() => loadLevel2(), 1500);
+            } else {
+                updateByteDialogue(`Masih ada urutan yang keliru (${correctCount}/7 benar). Gunakan tips Mnemonic!`);
+            }
+        }
+
+        // ==========================================
+        // LEVEL 2: PENCOCOKAN PROTOKOL (DRAG & TAP)
+        // ==========================================
+
+        function loadLevel2() {
+            currentLevel = 2;
+            document.getElementById('level-badge').innerText = "LEVEL 2: Pencocokan Protokol & Hardware";
+            updateByteDialogue("Pasangkan protokol/perangkat ke lapisan OSI yang sesuai!");
+
+            selectedL2ItemId = null;
+            level2BoardState = { 7: null, 6: null, 5: null, 4: null, 3: null, 2: null, 1: null };
+
+            const shuffledItems = [...LEVEL2_ITEMS].sort(() => Math.random() - 0.5);
+
+            const container = document.getElementById('level-container');
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Item Protokol & Hardware</h3>
+                        <div id="l2-cards-pool" class="space-y-2">
+                            ${shuffledItems.map(item => `
+                                <div id="l2-card-${item.id}" 
+                                     onclick="handleL2CardTap('${item.id}')"
+                                     draggable="true" 
+                                     ondragstart="handleL2DragStart(event, '${item.id}')"
+                                     class="draggable-card p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-sm font-semibold transition hover:border-slate-700">
+                                    <span class="text-slate-200">${item.name}</span>
+                                    <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-cyan-400">${item.type}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Target Lapisan OSI</h3>
+                        <div id="l2-slots" class="space-y-2">
+                            ${OSI_LAYERS.map(layer => `
+                                <div id="l2-slot-${layer.num}" 
+                                     onclick="handleL2SlotTap(${layer.num})"
+                                     ondragover="event.preventDefault()" 
+                                     ondrop="handleL2Drop(event, ${layer.num})"
+                                     class="drop-zone p-3 rounded-xl border-2 border-dashed border-slate-800 bg-slate-950/50 flex items-center justify-between text-sm min-h-[50px]">
+                                    <span class="text-xs font-bold text-slate-400">Layer ${layer.num}: ${layer.name}</span>
+                                    <span class="text-xs text-slate-600 font-normal">Ketuk item lalu ketuk slot ini</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="checkLevel2()" class="w-full mt-6 py-3.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl shadow-lg transition">
+                    Verifikasi Jawaban Level 2
+                </button>
+            `;
+        }
+
+        function handleL2CardTap(itemId) {
+            selectedL2ItemId = itemId;
+            document.querySelectorAll('#l2-cards-pool .draggable-card').forEach(el => el.classList.remove('card-selected'));
+            const cardEl = document.getElementById(`l2-card-${itemId}`);
+            if (cardEl) cardEl.classList.add('card-selected');
+            updateByteDialogue(`Item "${LEVEL2_ITEMS.find(i => i.id === itemId).name}" dipilih. Ketuk slot Layer tujuannya!`);
+        }
+
+        function handleL2SlotTap(slotNum) {
+            if (!selectedL2ItemId) return;
+            placeL2ItemInSlot(selectedL2ItemId, slotNum);
+            selectedL2ItemId = null;
+            document.querySelectorAll('#l2-cards-pool .draggable-card').forEach(el => el.classList.remove('card-selected'));
+        }
+
+        function handleL2DragStart(e, itemId) {
+            e.dataTransfer.setData('text/plain', itemId);
+        }
+
+        function handleL2Drop(e, slotNum) {
+            e.preventDefault();
+            const itemId = e.dataTransfer.getData('text/plain');
+            if (itemId) placeL2ItemInSlot(itemId, slotNum);
+        }
+
+        function placeL2ItemInSlot(itemId, slotNum) {
+            const itemObj = LEVEL2_ITEMS.find(i => i.id === itemId);
+            const layerObj = OSI_LAYERS.find(l => l.num === slotNum);
+            level2BoardState[slotNum] = itemId;
+
+            const slotEl = document.getElementById(`l2-slot-${slotNum}`);
+            slotEl.className = `p-3 rounded-xl bg-slate-800 border border-cyan-500/50 text-white font-semibold flex items-center justify-between text-sm`;
+            slotEl.innerHTML = `
+                <div>
+                    <span class="text-xs text-cyan-400 block">Layer ${slotNum}: ${layerObj.name}</span>
+                    <span>${itemObj.name}</span>
+                </div>
+                <button onclick="event.stopPropagation(); removeL2Slot(${slotNum}, '${itemId}')" class="text-xs bg-slate-700 px-2 py-1 rounded hover:bg-slate-600">Batal</button>
+            `;
+
+            const cardEl = document.getElementById(`l2-card-${itemId}`);
+            if (cardEl) cardEl.classList.add('hidden');
+        }
+
+        function removeL2Slot(slotNum, itemId) {
+            level2BoardState[slotNum] = null;
+            const layerObj = OSI_LAYERS.find(l => l.num === slotNum);
+
+            const slotEl = document.getElementById(`l2-slot-${slotNum}`);
+            slotEl.className = `drop-zone p-3 rounded-xl border-2 border-dashed border-slate-800 bg-slate-950/50 flex items-center justify-between text-sm min-h-[50px]`;
+            slotEl.innerHTML = `
+                <span class="text-xs font-bold text-slate-400">Layer ${slotNum}: ${layerObj.name}</span>
+                <span class="text-xs text-slate-600">Ketuk item lalu ketuk slot ini</span>
+            `;
+
+            const cardEl = document.getElementById(`l2-card-${itemId}`);
+            if (cardEl) cardEl.classList.remove('hidden');
+        }
+
+        function checkLevel2() {
+            let correctCount = 0;
+            for (let num = 1; num <= 7; num++) {
+                const itemId = level2BoardState[num];
+                if (itemId) {
+                    const itemObj = LEVEL2_ITEMS.find(i => i.id === itemId);
+                    if (itemObj && itemObj.targetLayer === num) correctCount++;
+                }
+            }
+
+            if (correctCount === 7) {
+                score += 350;
+                updateScoreUI();
+                updateByteDialogue("Sempurna! Semua protokol dan hardware tepat berada di layernya (+350 poin)!");
+                setTimeout(() => loadLevel3(), 1500);
+            } else {
+                updateByteDialogue(`Ada pencocokan yang belum tepat (${correctCount}/7 benar). Periksa kembali!`);
+            }
+        }
+
+        // ==========================================
+        // LEVEL 3: KUIS SKENARIO JARINGAN
+        // ==========================================
+
+        function loadLevel3() {
+            currentLevel = 3;
+            currentL3Index = 0;
+            document.getElementById('level-badge').innerText = "LEVEL 3: Kuis Skenario Jaringan";
+            renderL3Question();
+        }
+
+        function renderL3Question() {
+            const q = LEVEL3_QUESTIONS[currentL3Index];
+            updateByteDialogue(`Soal ${currentL3Index + 1} dari ${LEVEL3_QUESTIONS.length}: ${q.hint}`);
+
+            const container = document.getElementById('level-container');
+            container.innerHTML = `
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 max-w-xl mx-auto">
+                    <div class="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-2">Soal Studi Kasus ${currentL3Index + 1}</div>
+                    <h3 class="text-base font-semibold text-slate-100 mb-6 leading-relaxed">${q.question}</h3>
+
+                    <div class="space-y-3 mb-6">
+                        ${q.options.map((opt, idx) => `
+                            <button onclick="submitL3Answer(${idx})" class="w-full text-left p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500 text-sm font-medium transition text-slate-200">
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function submitL3Answer(selectedIdx) {
+            const q = LEVEL3_QUESTIONS[currentL3Index];
+            if (selectedIdx === q.correct) {
+                score += 100;
+                updateScoreUI();
+                updateByteDialogue("Jawabanmu Benar! (+100 poin)");
+            } else {
+                updateByteDialogue("Jawaban kurang tepat, mari lanjut ke soal berikutnya!");
+            }
+
+            currentL3Index++;
+            if (currentL3Index < LEVEL3_QUESTIONS.length) {
+                setTimeout(() => renderL3Question(), 1200);
+            } else {
+                setTimeout(() => finishGame(), 1200);
+            }
+        }
+
+        // ==========================================
+        // GAME OVER & LEADERBOARD SUBMISSION
+        // ==========================================
+
+        function finishGame() {
+            stopTimer();
+            showScreen('screen-result');
+
+            document.getElementById('final-score').innerText = score;
+            const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+            const secs = String(secondsElapsed % 60).padStart(2, '0');
+            document.getElementById('final-time').innerText = `${mins}:${secs}`;
+
+            updateByteDialogue(`Selamat ${studentName}! Misi selesai dengan total skor ${score}!`);
+
+            // Automatic Submission to Google Sheets
+            submitScoreToGoogleSheets(studentName, studentClass, score, secondsElapsed);
+        }
+
+        function submitScoreToGoogleSheets(nama, kelas, skor, waktu) {
+            const statusIcon = document.getElementById('sheets-status-icon');
+            const statusText = document.getElementById('sheets-status-text');
+
+            if (!appsScriptUrl || appsScriptUrl.includes("YOUR_SCRIPT_ID_HERE")) {
+                statusIcon.className = "fa-solid fa-circle-exclamation text-amber-400 text-base";
+                statusText.innerText = "URL Apps Script belum diisi di kode HTML.";
+                return;
+            }
+
+            statusIcon.className = "fa-solid fa-spinner fa-spin text-cyan-400 text-base";
+            statusText.innerText = "Mengirim nilai ke Google Sheet Leaderboard...";
+
+            fetch(appsScriptUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    nama: nama,
+                    kelas: kelas,
+                    skor: skor,
+                    waktu: waktu
+                })
+            })
+            .then(() => {
+                statusIcon.className = "fa-solid fa-circle-check text-emerald-400 text-base";
+                statusText.innerText = "Nilai Anda berhasil tersimpan di Google Sheet Leaderboard!";
+            })
+            .catch(err => {
+                statusIcon.className = "fa-solid fa-circle-xmark text-red-400 text-base";
+                statusText.innerText = "Gagal mengirim data ke Google Sheet. Periksa koneksi internet.";
+            });
+        }
+
+        function showStartScreen() {
+            showScreen('screen-start');
+        }
+
+        function showLeaderboardScreen() {
+            showScreen('screen-leaderboard');
+            fetchLeaderboardData();
+        }
+
+        function fetchLeaderboardData() {
+            const tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="p-6 text-center text-slate-500">
+                        <i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat data peringkat...
+                    </td>
+                </tr>
+            `;
+
+            if (!appsScriptUrl || appsScriptUrl.includes("YOUR_SCRIPT_ID_HERE")) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="p-6 text-center text-amber-400">
+                            Harap isi 'appsScriptUrl' pada file HTML dengan URL Google Apps Script milik Anda.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            fetch(appsScriptUrl)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="5" class="p-6 text-center text-slate-500">
+                                    Belum ada data nilai tersimpan.
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+
+                    tbody.innerHTML = data.map((item, idx) => `
+                        <tr class="hover:bg-slate-800/40 transition">
+                            <td class="p-3 font-bold ${idx === 0 ? 'text-amber-400' : idx === 1 ? 'text-slate-300' : idx === 2 ? 'text-amber-600' : 'text-slate-500'}">
+                                #${idx + 1}
+                            </td>
+                            <td class="p-3 font-medium text-slate-200">${item.nama}</td>
+                            <td class="p-3 text-slate-400">${item.kelas}</td>
+                            <td class="p-3 text-right font-bold text-cyan-400">${item.skor}</td>
+                            <td class="p-3 text-right text-slate-400">${item.waktu}s</td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(err => {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="p-6 text-center text-red-400">
+                                Gagal memuat data dari Google Sheet.
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+    </script>
+</body>
+</html>
